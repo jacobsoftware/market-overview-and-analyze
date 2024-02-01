@@ -1,0 +1,5 @@
+*.txt
+!requirements.txt
+*.db
+test*.py
+
