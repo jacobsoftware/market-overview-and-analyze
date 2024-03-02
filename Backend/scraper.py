@@ -4,7 +4,7 @@ import json
 import httpx
 import time
 from lxml import html
-
+from bs4 import BeautifulSoup
 import app
 STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
 CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
@@ -62,11 +62,21 @@ def get_data_from_steam_market(url: str,
         time.sleep(2)
     
     return list_of_data
-        
-def get_href_from_csgostash(url: str):
+# //div[@class="col-lg-4 col-md-6 col-widen text-center"]        
+def get_href_from_csgostash(url: str,
+                            search_phrase: str) -> None:
+    search_phrase = search_phrase.replace(' ', '+')
+    base_url = url + search_phrase
+    response = api_request(base_url)
+    soup = BeautifulSoup(response.text,'lxml')
+    pagination = soup.find('ul', class_='pagination')
+    pages = pagination.find_all('li')
+    page_count = pages[-2].text
+
 
     list_of_href = []
     
 
 if __name__ == '__main__':
-    get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
+    #get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
