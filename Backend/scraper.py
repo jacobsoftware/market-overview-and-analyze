@@ -5,23 +5,27 @@ import httpx
 import time
 from lxml import html
 from bs4 import BeautifulSoup
-import app
-STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
-CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
-HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
+import datetime
 
+import app
 
 def load_json(file:str) -> list:
     with open(file, 'r') as json_file:
         key = json.load(json_file)
         return key
-    
+loaded_keys = load_json('keys.json')
+
+STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
+CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
+HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
+COOKIES_CSGOSTASH_USD = loaded_keys['csgostash_cookies_usd']
+
 def retry(function, retries=3):
-    def wrapper(*args):
+    def wrapper(*args,**kwargs):
         attempts = 0
         while attempts < retries:
             try:
-                return function(*args)
+                return function(*args,**kwargs)
             
             except httpx.HTTPError as error:
                 print(error)
@@ -33,50 +37,122 @@ def retry(function, retries=3):
 
    
 @retry
-def api_request(url: str, params=None) -> httpx.Response:
-    response = httpx.get(url, headers=HEADERS, params=params)   
+def api_request(url: str, params=None, cookies=None) -> httpx.Response:
+    response = httpx.get(url, headers=HEADERS, params=params,cookies=cookies)   
     return response
 
+
 # Steam site is unstable and quite often crash. I guess better option is csgocase.
-def get_data_from_steam_market(url: str,
-                               number_of_pages: int,
-                               search_phrase: str) -> list:
+
+# def get_data_from_steam_market(url: str,
+#                                number_of_pages: int,
+#                                search_phrase: str) -> list:
     
-    search_phrase = search_phrase.replace(' ', '+')
-    list_of_data = []
+#     search_phrase = search_phrase.replace(' ', '+')
+#     list_of_data = []
 
-    for i in range (1,number_of_pages+1):
+#     for i in range (1,number_of_pages+1):
 
-        current_url = url + '&q=' + search_phrase + '#p'+str(i) + '_deafault_desc'
-        response = api_request(current_url)
-        tree = html.fromstring(response.text)   
-        items = tree.xpath('//a[@class="market_listing_row_link"]')
+#         current_url = url + '&q=' + search_phrase + '#p'+str(i) + '_deafault_desc'
+#         response = api_request(current_url)
+#         tree = html.fromstring(response.text)   
+#         items = tree.xpath('//a[@class="market_listing_row_link"]')
         
-        for index,item in enumerate(items):
+#         for index,item in enumerate(items):
 
-            name =item.xpath('//div[@class="market_listing_item_name_block"]/span[@class="market_listing_item_name"]/text()')[index]
-            price = item.xpath('//div[@class="market_listing_right_cell market_listing_their_price"]/span/span[@class="normal_price"]/text()')[index]
-            market_volume = item.xpath('//div[@class="market_listing_right_cell market_listing_num_listings"]/span/span[@class="market_listing_num_listings_qty"]/text()')[index]
-            list_of_data.append([name, price, market_volume])
+#             name =item.xpath('//div[@class="market_listing_item_name_block"]/span[@class="market_listing_item_name"]/text()')[index]
+#             price = item.xpath('//div[@class="market_listing_right_cell market_listing_their_price"]/span/span[@class="normal_price"]/text()')[index]
+#             market_volume = item.xpath('//div[@class="market_listing_right_cell market_listing_num_listings"]/span/span[@class="market_listing_num_listings_qty"]/text()')[index]
+#             list_of_data.append([name, price, market_volume])
 
-        time.sleep(2)
+#         time.sleep(2)
     
-    return list_of_data
-# //div[@class="col-lg-4 col-md-6 col-widen text-center"]        
-def get_href_from_csgostash(url: str,
-                            search_phrase: str) -> None:
-    search_phrase = search_phrase.replace(' ', '+')
-    base_url = url + search_phrase
-    response = api_request(base_url)
+#     return list_of_data
+
+
+# No need to get hrefs
+       
+# def get_href_from_csgostash(url: str,
+#                             search_phrase: str) -> list:
+#     search_phrase = search_phrase.replace(' ', '+')
+#     base_url = url + search_phrase
+#     response = api_request(base_url)
+#     soup = BeautifulSoup(response.text,'lxml')
+    
+#     pagination = soup.find('ul', class_='pagination')
+#     pages = pagination.find_all('li')
+#     page_count = int(pages[-2].text)
+#     list_of_href = []
+    
+#     for page in range(page_count):
+#         if page == 0:
+#             divs = soup.find_all('div', class_='col-lg-4 col-md-6 col-widen text-center')
+#         else: 
+#             base_url = url + search_phrase
+#             next_page_url = base_url + '?page='+str(int(page+1))
+#             response = api_request(next_page_url)
+#             soup2 = BeautifulSoup(response.text,'lxml')
+#             divs = soup2.find_all('div', class_='col-lg-4 col-md-6 col-widen text-center')
+           
+#         for div in divs:
+#             name_sticker = div.h3.text
+#             name_event = div.h4.text
+#             full_name = name_sticker + ' ' + name_event
+#             href = div.a.get('href')
+#             list_of_href.append([full_name,href])
+#     print(list_of_href)
+#     return list_of_href
+
+def get_data_from_csgostash(url: str,
+                            search_phrase: str) -> list:
+    change_phrase = search_phrase.replace(' ', '+')
+    base_url = url + change_phrase
+    cookie = {'currency':COOKIES_CSGOSTASH_USD.get('value')}
+    response = api_request(base_url,cookies=cookie)
     soup = BeautifulSoup(response.text,'lxml')
+    
     pagination = soup.find('ul', class_='pagination')
     pages = pagination.find_all('li')
-    page_count = pages[-2].text
+    page_count = int(pages[-2].text)
+    
+    list_of_data = []
+    current_date = datetime.datetime.today().strftime('%m-%d-%Y')
 
+    for page in range(page_count):
+        if page == 0:
+            tree = html.fromstring(response.text)
+            items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
 
-    list_of_href = []
+        else:
+            base_url = url + change_phrase
+            next_page_url = base_url + '?page='+str(int(page+1))
+            
+            response = api_request(next_page_url,cookies=cookie)
+            tree = html.fromstring(response.text)
+            items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
+
+        for index,item in enumerate(items):
+
+            name = item.xpath('//h3/a/text()')[index]
+
+            if search_phrase == '2020 RMR': full_name = 'Sticker | ' + name + ' | RMR 2020'
+            else: full_name = 'Sticker | ' + name + ' | ' + search_phrase
+
+            price = item.xpath('//div[@class="price"]/p/a/text()')[index]
+            price = price.replace('$','')
+            listings = item.xpath('//div[@class="btn-group-sm btn-group-justified"]/a[@class="btn btn-default market-button-item"]/text()')[index]
+            listings = listings.split(' ',1)[0]
+            date = current_date
+            list_of_data.append([full_name,price,listings])
+
+    print(search_phrase) 
+    print(list_of_data)
     
 
 if __name__ == '__main__':
     #get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
+    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
+    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
+    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
+    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
+    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')

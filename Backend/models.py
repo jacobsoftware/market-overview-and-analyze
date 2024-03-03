@@ -10,8 +10,8 @@ class Stickers(Base):
     date = Column(String)
     name = Column(String)
     price = Column(Float)
-    market_volume = Column(Integer)
-    sold_in_last_day = Column(Integer)
+    market_listings = Column(Integer)
+    #sold_in_last_day = Column(Integer)
 
 class StickersHref(Base):
     __abstract__ = True
@@ -30,11 +30,11 @@ def create_stickers_model(name,data_class):
     return Model
 
 
-Paris_2023 = create_stickers_model('Paris_2023',Stickers)
-Rio_2022 = create_stickers_model('Rio_2022',Stickers)
-Antwerp_2022 = create_stickers_model('Antwerp_2022',Stickers)
-Stockholm_2021 = create_stickers_model('Stockholm_2021',Stickers)
-Rmr_2020 = create_stickers_model('RMR_2020',Stickers)
+Paris_2023 = create_stickers_model('Steam_market_Paris_2023',Stickers)
+Rio_2022 = create_stickers_model('Steam_market_Rio_2022',Stickers)
+Antwerp_2022 = create_stickers_model('Steam_market_Antwerp_2022',Stickers)
+Stockholm_2021 = create_stickers_model('Steam_market_Stockholm_2021',Stickers)
+Rmr_2020 = create_stickers_model('Steam_market_RMR_2020',Stickers)
 
 if __name__ == '__main__':
     pass
