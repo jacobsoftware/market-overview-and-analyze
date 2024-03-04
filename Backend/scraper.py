@@ -6,6 +6,7 @@ import time
 from lxml import html
 from bs4 import BeautifulSoup
 import datetime
+import os, os.path
 
 import app
 
@@ -19,7 +20,7 @@ STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
 CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
 HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
 COOKIES_CSGOSTASH_USD = loaded_keys['csgostash_cookies_usd']
-
+HREFS_PATH = os.path.join(os.path.dirname(__file__), 'href_stickers.json')
 def retry(function, retries=3):
     def wrapper(*args,**kwargs):
         attempts = 0
@@ -71,53 +72,33 @@ def api_request(url: str, params=None, cookies=None) -> httpx.Response:
 
 
 # No need to get hrefs
-       
-# def get_href_from_csgostash(url: str,
-#                             search_phrase: str) -> list:
-#     search_phrase = search_phrase.replace(' ', '+')
-#     base_url = url + search_phrase
-#     response = api_request(base_url)
-#     soup = BeautifulSoup(response.text,'lxml')
-    
-#     pagination = soup.find('ul', class_='pagination')
-#     pages = pagination.find_all('li')
-#     page_count = int(pages[-2].text)
-#     list_of_href = []
-    
-#     for page in range(page_count):
-#         if page == 0:
-#             divs = soup.find_all('div', class_='col-lg-4 col-md-6 col-widen text-center')
-#         else: 
-#             base_url = url + search_phrase
-#             next_page_url = base_url + '?page='+str(int(page+1))
-#             response = api_request(next_page_url)
-#             soup2 = BeautifulSoup(response.text,'lxml')
-#             divs = soup2.find_all('div', class_='col-lg-4 col-md-6 col-widen text-center')
-           
-#         for div in divs:
-#             name_sticker = div.h3.text
-#             name_event = div.h4.text
-#             full_name = name_sticker + ' ' + name_event
-#             href = div.a.get('href')
-#             list_of_href.append([full_name,href])
-#     print(list_of_href)
-#     return list_of_href
+def check(function):
+    def wrapper(url,search_phrase):
+        try:
+            check_json = load_json(HREFS_PATH)
+            if search_phrase not in check_json:
+                function(url,search_phrase)
+            else: print('Already exist')
+        except:
+            print('Exception')
+            function(url,search_phrase)
+    return wrapper
 
-def get_data_from_csgostash(url: str,
-                            search_phrase: str) -> list:
+
+@check                  
+def get_href_from_csgostash(url: str,
+                            search_phrase: str) -> None:
+
     change_phrase = search_phrase.replace(' ', '+')
     base_url = url + change_phrase
-    cookie = {'currency':COOKIES_CSGOSTASH_USD.get('value')}
-    response = api_request(base_url,cookies=cookie)
+    response = api_request(base_url)
     soup = BeautifulSoup(response.text,'lxml')
     
     pagination = soup.find('ul', class_='pagination')
     pages = pagination.find_all('li')
     page_count = int(pages[-2].text)
+    list_of_href = []
     
-    list_of_data = []
-    current_date = datetime.datetime.today().strftime('%m-%d-%Y')
-
     for page in range(page_count):
         if page == 0:
             tree = html.fromstring(response.text)
@@ -127,7 +108,7 @@ def get_data_from_csgostash(url: str,
             base_url = url + change_phrase
             next_page_url = base_url + '?page='+str(int(page+1))
             
-            response = api_request(next_page_url,cookies=cookie)
+            response = api_request(next_page_url)
             tree = html.fromstring(response.text)
             items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
 
@@ -137,22 +118,85 @@ def get_data_from_csgostash(url: str,
 
             if search_phrase == '2020 RMR': full_name = 'Sticker | ' + name + ' | RMR 2020'
             else: full_name = 'Sticker | ' + name + ' | ' + search_phrase
+            href_link = item.xpath('//div[@class="well result-box nomargin"]/h3/a/@href')[index]
+            temp_dict = {'name':full_name,'href_link':href_link}
+            list_of_href.append(temp_dict)
+    dict_to_json = {}
+    dict_to_json[search_phrase] = list_of_href
+    #print(list_of_href)
+    if os.path.isfile(HREFS_PATH):
+        loaded_json = load_json(HREFS_PATH)
+        loaded_json.update(dict_to_json)
+        with open(HREFS_PATH, 'w') as save_hrefs:
+            json.dump(loaded_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
+    else:
+        with open(HREFS_PATH, 'w') as save_hrefs:
+            json.dump(dict_to_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
 
-            price = item.xpath('//div[@class="price"]/p/a/text()')[index]
-            price = price.replace('$','')
-            listings = item.xpath('//div[@class="btn-group-sm btn-group-justified"]/a[@class="btn btn-default market-button-item"]/text()')[index]
-            listings = listings.split(' ',1)[0]
-            date = current_date
-            list_of_data.append([full_name,price,listings])
 
-    print(search_phrase) 
-    print(list_of_data)
+
+
+
+# def get_data_from_csgostash(url: str,
+#                             search_phrase: str) -> list:
+    
+#     change_phrase = search_phrase.replace(' ', '+')
+#     base_url = url + change_phrase
+#     cookie = {'currency':COOKIES_CSGOSTASH_USD.get('value')}
+#     response = api_request(base_url,cookies=cookie)
+#     soup = BeautifulSoup(response.text,'lxml')
+    
+#     pagination = soup.find('ul', class_='pagination')
+#     pages = pagination.find_all('li')
+#     page_count = int(pages[-2].text)
+
+#     list_of_data = []
+#     current_date = datetime.datetime.today().strftime('%m-%d-%Y')
+
+
+
+#     for page in range(page_count):
+#         if page == 0:
+#             tree = html.fromstring(response.text)
+#             items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
+
+#         else:
+#             base_url = url + change_phrase
+#             next_page_url = base_url + '?page='+str(int(page+1))
+            
+#             response = api_request(next_page_url,cookies=cookie)
+#             tree = html.fromstring(response.text)
+#             items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
+
+#         for index,item in enumerate(items):
+
+#             name = item.xpath('//h3/a/text()')[index]
+
+#             if search_phrase == '2020 RMR': full_name = 'Sticker | ' + name + ' | RMR 2020'
+#             else: full_name = 'Sticker | ' + name + ' | ' + search_phrase
+
+#             price = item.xpath('//div[@class="price"]/p/a/text()')[index]
+#             price = price.replace('$','')
+#             listings = item.xpath('//div[@class="btn-group-sm btn-group-justified"]/a[@class="btn btn-default market-button-item"]/text()')[index]
+#             listings = listings.split(' ',1)[0]
+#             date = current_date
+#             list_of_data.append([full_name,price,listings])
+
+#     print(search_phrase) 
+#     print(list_of_data)
     
 
 if __name__ == '__main__':
     #get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
-    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
-    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
-    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
-    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
-    get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
+
+    #get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
+    # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
+    # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
+    # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
+    # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
+
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')

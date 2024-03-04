@@ -11,7 +11,8 @@ class Stickers(Base):
     name = Column(String)
     price = Column(Float)
     market_listings = Column(Integer)
-    #sold_in_last_day = Column(Integer)
+    sold_in_last_day = Column(Integer)
+    capsule_name = Column(String)
 
 class StickersHref(Base):
     __abstract__ = True

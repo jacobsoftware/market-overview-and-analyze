@@ -16,7 +16,8 @@ class StickersBase(BaseModel):
     name: str
     price: float
     market_listings: int
-    #sold_in_last_day: int
+    sold_in_last_day: int
+    capsule_name: str
 
 
 
