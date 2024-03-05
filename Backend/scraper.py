@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 import datetime
 import os, os.path
 import re
+from sqlalchemy.orm import sessionmaker
+import pprint
+from itertools import islice
 
 import app
 
@@ -15,12 +18,12 @@ def load_json(file:str) -> list:
     with open(file, 'r') as json_file:
         key = json.load(json_file)
         return key
-loaded_keys = load_json('keys.json')
+LOADED_KEYS = load_json('keys.json')
 
 STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
 CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
 HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
-COOKIES_CSGOSTASH_USD = loaded_keys['csgostash_cookies_usd']
+COOKIES_CSGOSTASH_USD = LOADED_KEYS['csgostash_cookies_usd']
 HREFS_PATH = os.path.join(os.path.dirname(__file__), 'href_stickers.json')
 
 
@@ -95,14 +98,15 @@ def get_href_from_csgostash(url: str,
     change_phrase = search_phrase.replace(' ', '+')
     base_url = url + change_phrase
     response = api_request(base_url)
-    soup = BeautifulSoup(response.text,'lxml')
-    
-    pagination = soup.find('ul', class_='pagination')
-    pages = pagination.find_all('li')
-    page_count = int(pages[-2].text)
+    # soup = BeautifulSoup(response.text,'lxml')
+    # pagination = soup.find('ul', class_='pagination')
+    # pages = pagination.find_all('li')
+    # page_count = int(pages[-2].text)
+    tree = html.fromstring(response.text)
+    number_of_pages = tree.xpath('//div[@class="row"][3]/div[@class="col-lg-12 col-widen pagination-nomargin"]/ul[@class="pagination"]/li/a/text()')[-2]
     list_of_href = []
     
-    for page in range(page_count):
+    for page in range(int(number_of_pages)):
         if page == 0:
             tree = html.fromstring(response.text)
             items = tree.xpath('//div[@class="col-lg-4 col-md-6 col-widen text-center"]')
@@ -141,14 +145,16 @@ def get_href_from_csgostash(url: str,
             json.dump(dict_to_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
 
 
-def get_data_about_event_stickers(event_name: str) -> None:
+def get_data_about_event_stickers(event_name: str,
+                                  table: object) -> None:
 
     hrefs = load_json(HREFS_PATH)
     hrefs = hrefs[event_name]
     cookie = {'currency':COOKIES_CSGOSTASH_USD.get('value')}
-    
-    for href in hrefs:
+    scraped_data_about_stickers = []
 
+    #for href in islice(hrefs, limit=10):
+    for index,href in enumerate(hrefs):
         url = href['href_link']
         response = api_request(url,cookies=cookie)
         tree = html.fromstring(response.text)
@@ -160,7 +166,7 @@ def get_data_about_event_stickers(event_name: str) -> None:
         # sold_in_last_day = Column(Integer)
         # capsule_name = Column(String)
         
-        current_date = datetime.datetime.today().strftime('%m-%d-%Y')
+        current_date = datetime.datetime.today().strftime('%d-%m-%Y')
         name = href['name']
         capsule_name = href['capsule_name']
 
@@ -177,10 +183,35 @@ def get_data_about_event_stickers(event_name: str) -> None:
         if not sold_in_last_day: sold_in_last_day = 0
         else: sold_in_last_day = sold_in_last_day[0]
 
-        print('Price: ', price, 'Listings: ', listings, 'Sold: ', sold_in_last_day)
+        temp_dict = {'date': current_date, 'name': name, 'price': price, 'market_listings': listings, 
+                     'sold_in_last_day': sold_in_last_day, 'capsule_name': capsule_name}
+        print('Number: ',index+1,temp_dict)
+        scraped_data_about_stickers.append(temp_dict)
 
+    #pprint.pprint(scraped_data_about_stickers)
+    save_scraped_data(scraped_data_about_stickers,table)
         
 
+def save_scraped_data(list_of_data_to_db: list,
+                      table: object) -> None:
+    session = app.SessionLocal()
+    for item in list_of_data_to_db:
+        entry = table(date=item['date'], name = item['name'], price = item['price'], market_listings = item['market_listings'],
+                    sold_in_last_day = item['sold_in_last_day'], capsule_name = item['capsule_name']  )
+        session.add(entry)
+    session.commit()
+    session.close()
+
+def get_current_player_base() -> list:
+    url = 'https://steamcharts.com/app/730'
+    response = api_request(url)
+    tree = html.fromstring(response.text)
+
+    avg_player = tree.xpath('//div[@id="app-heading"]/div[1]/span/text()')
+    peak_player_day = tree.xpath('//div[@id="app-heading"]/div[2]/span/text()')
+    return [avg_player,peak_player_day]
+
+# Faster way to scrape data but without daily sell - preferable if csgostash set rate limits
 
 # def get_data_from_csgostash(url: str,
 #                             search_phrase: str) -> list:
@@ -229,7 +260,15 @@ def get_data_about_event_stickers(event_name: str) -> None:
 
 #     print(search_phrase) 
 #     print(list_of_data)
-    
+def main():
+
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
+    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
+
+    get_data_about_event_stickers('Paris 2023',app.models.Paris_2023)
 
 if __name__ == '__main__':
     #get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
@@ -245,4 +284,10 @@ if __name__ == '__main__':
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
-    get_data_about_event_stickers('Paris 2023')
+    get_data_about_event_stickers('Paris 2023',app.models.Paris_2023)
+    get_data_about_event_stickers('Rio 2022',app.models.Rio_2022)
+    get_data_about_event_stickers('Antwerp 2022',app.models.Antwerp_2022)
+    get_data_about_event_stickers('Stockholm 2021',app.models.Stockholm_2021)
+    get_data_about_event_stickers('2020 RMR',app.models.Rmr_2020)
+
+    #get_current_player_base()
