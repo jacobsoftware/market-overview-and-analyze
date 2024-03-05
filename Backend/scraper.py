@@ -7,6 +7,7 @@ from lxml import html
 from bs4 import BeautifulSoup
 import datetime
 import os, os.path
+import re
 
 import app
 
@@ -21,6 +22,8 @@ CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
 HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
 COOKIES_CSGOSTASH_USD = loaded_keys['csgostash_cookies_usd']
 HREFS_PATH = os.path.join(os.path.dirname(__file__), 'href_stickers.json')
+
+
 def retry(function, retries=3):
     def wrapper(*args,**kwargs):
         attempts = 0
@@ -119,10 +122,14 @@ def get_href_from_csgostash(url: str,
             if search_phrase == '2020 RMR': full_name = 'Sticker | ' + name + ' | RMR 2020'
             else: full_name = 'Sticker | ' + name + ' | ' + search_phrase
             href_link = item.xpath('//div[@class="well result-box nomargin"]/h3/a/@href')[index]
-            temp_dict = {'name':full_name,'href_link':href_link}
+            capsule_name = item.xpath('//div[@class="margin-bot-sm"]/p/a/text()')[index]
+            temp_dict = {'name':full_name,'href_link':href_link,'capsule_name':capsule_name}
+            print(temp_dict)
             list_of_href.append(temp_dict)
+
     dict_to_json = {}
     dict_to_json[search_phrase] = list_of_href
+
     #print(list_of_href)
     if os.path.isfile(HREFS_PATH):
         loaded_json = load_json(HREFS_PATH)
@@ -134,7 +141,45 @@ def get_href_from_csgostash(url: str,
             json.dump(dict_to_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
 
 
+def get_data_about_event_stickers(event_name: str) -> None:
 
+    hrefs = load_json(HREFS_PATH)
+    hrefs = hrefs[event_name]
+    cookie = {'currency':COOKIES_CSGOSTASH_USD.get('value')}
+    
+    for href in hrefs:
+
+        url = href['href_link']
+        response = api_request(url,cookies=cookie)
+        tree = html.fromstring(response.text)
+
+        # date = Column(String)
+        # name = Column(String)
+        # price = Column(Float)
+        # market_listings = Column(Integer)
+        # sold_in_last_day = Column(Integer)
+        # capsule_name = Column(String)
+        
+        current_date = datetime.datetime.today().strftime('%m-%d-%Y')
+        name = href['name']
+        capsule_name = href['capsule_name']
+
+        price = tree.xpath('//div[@class="btn-group btn-group-justified"][1]/a/span[@class="pull-right"]/text()')
+        price = price[0].replace('$','')
+
+        listings = tree.xpath('//table[@class="table table-bordered text-left"]/tr[1]/td/span/text()')
+        listings = re.findall('\d+',listings[0])
+        if listings[0] == '': listings = 0
+        else: listings = listings[0]
+
+        sold_in_last_day = tree.xpath('//table[@class="table table-bordered text-left"]/tr[3]/td/span/text()')
+        sold_in_last_day = re.findall('\d+', sold_in_last_day[0])
+        if not sold_in_last_day: sold_in_last_day = 0
+        else: sold_in_last_day = sold_in_last_day[0]
+
+        print('Price: ', price, 'Listings: ', listings, 'Sold: ', sold_in_last_day)
+
+        
 
 
 # def get_data_from_csgostash(url: str,
@@ -200,3 +245,4 @@ if __name__ == '__main__':
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
+    get_data_about_event_stickers('Paris 2023')
