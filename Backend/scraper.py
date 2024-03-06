@@ -19,7 +19,7 @@ def load_json(file:str) -> list:
         key = json.load(json_file)
         return key
 LOADED_KEYS = load_json('keys.json')
-
+CSFLOAT_API_KEY = LOADED_KEYS['csfloat_api_key']
 STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
 CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
 HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
@@ -213,7 +213,10 @@ def get_current_player_base() -> list:
     return [avg_player,peak_player_day]
 
 def get_application_rate():
-    pass
+    url = 'https://csfloat.com/api/v1/listings'
+    params = {'Authorization':CSFLOAT_API_KEY}
+    response = api_request(url,params=params)
+    print(response.json())
 
 # Faster way to scrape data but without daily sell - preferable if csgostash set rate limits
 
@@ -273,6 +276,10 @@ def main():
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
 
     get_data_about_event_stickers('Paris 2023',app.models.Paris_2023)
+    get_data_about_event_stickers('Rio 2022',app.models.Rio_2022)
+    get_data_about_event_stickers('Antwerp 2022',app.models.Antwerp_2022)
+    get_data_about_event_stickers('Stockholm 2021',app.models.Stockholm_2021)
+    get_data_about_event_stickers('2020 RMR',app.models.Rmr_2020)
 
 if __name__ == '__main__':
     #get_data_from_steam_market(STEAM_MAIN_SITE,15,'Paris holo 2023')
@@ -282,16 +289,5 @@ if __name__ == '__main__':
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
-
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Paris 2023')
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Rio 2022')
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
-    get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
-    get_data_about_event_stickers('Paris 2023',app.models.Paris_2023)
-    get_data_about_event_stickers('Rio 2022',app.models.Rio_2022)
-    get_data_about_event_stickers('Antwerp 2022',app.models.Antwerp_2022)
-    get_data_about_event_stickers('Stockholm 2021',app.models.Stockholm_2021)
-    get_data_about_event_stickers('2020 RMR',app.models.Rmr_2020)
-
+    get_application_rate()
     #get_current_player_base()
