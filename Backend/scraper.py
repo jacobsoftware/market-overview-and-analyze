@@ -49,7 +49,8 @@ def api_request(url: str, params=None, cookies=None) -> httpx.Response:
     return response
 
 
-# Steam site is unstable and quite often crash. I guess better option is csgocase.
+# Steam site is unstable and quite often crash. I guess better option is csgocase. 
+# There is also API steam but it has big downside of requests limits
 
 # def get_data_from_steam_market(url: str,
 #                                number_of_pages: int,
@@ -210,6 +211,9 @@ def get_current_player_base() -> list:
     avg_player = tree.xpath('//div[@id="app-heading"]/div[1]/span/text()')
     peak_player_day = tree.xpath('//div[@id="app-heading"]/div[2]/span/text()')
     return [avg_player,peak_player_day]
+
+def get_application_rate():
+    pass
 
 # Faster way to scrape data but without daily sell - preferable if csgostash set rate limits
 
