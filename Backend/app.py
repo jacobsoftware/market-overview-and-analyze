@@ -12,7 +12,7 @@ import models
 
 
 class StickersBase(BaseModel):
-    date: str
+    date_of_scrape: str
     name: str
     price: float
     market_listings: int

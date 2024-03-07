@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, String, Boolean, Float, JSON, Table, MetaData
+from sqlalchemy import Column, Integer, String, Boolean, Float, JSON, Table, MetaData, Date
 
 
 
@@ -7,7 +7,7 @@ class Stickers(Base):
     __abstract__ = True
 
     id = Column(Integer, primary_key=True,autoincrement=True)   
-    date = Column(String)
+    date_of_scrape = Column(Date)
     name = Column(String)
     price = Column(Float)
     market_listings = Column(Integer)

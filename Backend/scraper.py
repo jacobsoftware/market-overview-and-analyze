@@ -184,7 +184,7 @@ def get_data_about_event_stickers(event_name: str,
         if not sold_in_last_day: sold_in_last_day = 0
         else: sold_in_last_day = sold_in_last_day[0]
 
-        temp_dict = {'date': current_date, 'name': name, 'price': price, 'market_listings': listings, 
+        temp_dict = {'date_of_scrape': current_date, 'name': name, 'price': price, 'market_listings': listings, 
                      'sold_in_last_day': sold_in_last_day, 'capsule_name': capsule_name}
         print('Number: ',index+1,temp_dict)
         scraped_data_about_stickers.append(temp_dict)
@@ -197,7 +197,7 @@ def save_scraped_data(list_of_data_to_db: list,
                       table: object) -> None:
     session = app.SessionLocal()
     for item in list_of_data_to_db:
-        entry = table(date=item['date'], name = item['name'], price = item['price'], market_listings = item['market_listings'],
+        entry = table(date_of_scrape=item['date_of_scrape'], name = item['name'], price = item['price'], market_listings = item['market_listings'],
                     sold_in_last_day = item['sold_in_last_day'], capsule_name = item['capsule_name']  )
         session.add(entry)
     session.commit()
@@ -289,5 +289,6 @@ if __name__ == '__main__':
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Antwerp 2022')
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
     # get_data_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
-    get_application_rate()
+    #get_application_rate()
     #get_current_player_base()
+    main()
