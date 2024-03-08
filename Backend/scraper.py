@@ -214,6 +214,7 @@ def get_current_player_base() -> list:
 
 def get_application_rate():
     url = 'https://csfloat.com/api/v1/listings'
+    # id
     params = {'Authorization':CSFLOAT_API_KEY}
     response = api_request(url,params=params)
     print(response.json())
