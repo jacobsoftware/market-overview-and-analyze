@@ -185,19 +185,19 @@ def get_application_rate():
 def get_buff_id_of_items():
 
     url = 'https://raw.githubusercontent.com/ModestSerhat/buff163-ids/main/buffids.json'
-    # df = pd.read_json(url)
-    # df.head()
     response = api_request(url)
     response_dict = response.json()
+    
     capsule_list = []
     stickers_list = []
 
     for key in response_dict:
         if 'Capsule' in response_dict[key]:
-            print('klucz ',key,'value',response_dict[key])
             capsule_list.append({'buff_id': key,'capsule_name':response_dict[key]})
-        # if 'Sticker' in response_dict[key]:
-        #     stickers_list.append[{'buff_id': key,'sticker_name':response_dict[key]}]
+
+        if 'Sticker' in response_dict[key]:
+            stickers_list.append[{'buff_id': key,'sticker_name':response_dict[key]}]
+
     capsule_dict = {}
     capsule_dict['capsule'] = capsule_list
     save_or_update_json(CAPSULE_INFO,capsule_dict)
