@@ -11,12 +11,9 @@ import pandas as pd
 
 import app
 import models
+from utils_file import *
 
 
-def load_json(file:str) -> list:
-    with open(file, 'r') as json_file:
-        key = json.load(json_file)
-        return key
     
 LOADED_KEYS = load_json('keys.json')
 CSFLOAT_API_KEY = LOADED_KEYS['csfloat_api_key']
@@ -69,9 +66,11 @@ def get_href_from_csgostash(url: str,
 
     change_phrase = search_phrase.replace(' ', '+')
     base_url = url + change_phrase
+    print(base_url)
     response = api_request(base_url)
     tree = html.fromstring(response.text)
-    number_of_pages = tree.xpath('//div[@class="row"][3]/div[@class="col-lg-12 col-widen pagination-nomargin"]/ul[@class="pagination"]/li/a/text()')[-2]
+    number_of_pages = tree.xpath('//div[@class="row"]/div[@class="col-lg-12 col-widen pagination-nomargin"]/ul[@class="pagination"]/li/a/text()')[-2]
+    print(number_of_pages)
     list_of_href = []
     
     for page in range(int(number_of_pages)):
@@ -89,10 +88,10 @@ def get_href_from_csgostash(url: str,
 
         for index,item in enumerate(items):
 
-            name = item.xpath('//h3/a/text()')[index]
+            name = item.xpath('//div[@class="well result-box nomargin"]/h3/a/text()')[index]
 
-            if search_phrase == '2020 RMR': full_name = 'Sticker | ' + name + ' | RMR 2020'
-            else: full_name = 'Sticker | ' + name + ' | ' + search_phrase
+            
+            full_name = 'Sticker | ' + name + ' | ' + search_phrase
             href_link = item.xpath('//div[@class="well result-box nomargin"]/h3/a/@href')[index]
             capsule_name = item.xpath('//div[@class="margin-bot-sm"]/p/a/text()')[index]
             temp_dict = {'name':full_name,'href_link':href_link,'capsule_name':capsule_name}
@@ -105,16 +104,7 @@ def get_href_from_csgostash(url: str,
     #print(list_of_href)
     save_or_update_json(STICKERS_INFO,dict_to_json)
 
-def save_or_update_json(path:str, dict_to_json:dict) -> None:
 
-    if os.path.isfile(path):
-        loaded_json = load_json(path)
-        loaded_json.update(dict_to_json)
-        with open(path, 'w') as save_hrefs:
-            json.dump(loaded_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
-    else:
-        with open(path, 'w') as save_hrefs:
-            json.dump(dict_to_json,save_hrefs,sort_keys=True,indent=4,separators=(',', ': '))
 
 
 def get_data_about_event_stickers(event_name: str,
@@ -190,17 +180,41 @@ def get_buff_id_of_items():
     
     capsule_list = []
     stickers_list = []
-
+    events = ['Paris 2023','Rio 2022','Antwerp 2022','Stockholm 2021','2020 RMR']
+    rmr_capsule = ['2020 RMR Legends', '2020 RMR Challengers','2020 RMR Contenders']
+    sticker_dict = load_json(STICKERS_INFO)
+    
     for key in response_dict:
-        if 'Capsule' in response_dict[key]:
-            capsule_list.append({'buff_id': key,'capsule_name':response_dict[key]})
+        
+        if 'Capsule' in response_dict[key] or any(x in response_dict[key] for x in rmr_capsule):
+            
+            if any(x in response_dict[key] for x in events):
+                capsule_list.append({'buff_id': key,'capsule_name':response_dict[key]})
 
-        if 'Sticker' in response_dict[key]:
-            stickers_list.append[{'buff_id': key,'sticker_name':response_dict[key]}]
+        if re.search('^Sticker.*$',response_dict[key]):
+            if any(x in response_dict[key] for x in events):
+                split_name = response_dict[key].split(' | ')
+                for index,_ in enumerate(sticker_dict[split_name[-1]]):
 
-    capsule_dict = {}
-    capsule_dict['capsule'] = capsule_list
-    save_or_update_json(CAPSULE_INFO,capsule_dict)
+                    if sticker_dict[split_name[-1]][index]['name'] == response_dict[key]:
+                        sticker_dict[split_name[-1]][index].update({'buff_id':key})
+                        
+
+                
+                
+                
+
+
+            #stickers_list.append({'buff_id': key,'sticker_name':response_dict[key]})
+    if os.path.isfile(CAPSULE_INFO) is False:
+        capsule_dict = {}
+        capsule_dict['capsule'] = capsule_list
+        save_or_update_json(CAPSULE_INFO,capsule_dict)
+    save_or_update_json(STICKERS_INFO,sticker_dict)
+
+    
+
+
 
 
 
@@ -212,13 +226,13 @@ def main():
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'Stockholm 2021')
     get_href_from_csgostash(CSGOSTASH_MAIN_SITE,'2020 RMR')
 
-    get_data_about_event_stickers('Paris 2023',models.Paris_2023)
-    get_data_about_event_stickers('Rio 2022',models.Rio_2022)
-    get_data_about_event_stickers('Antwerp 2022',models.Antwerp_2022)
-    get_data_about_event_stickers('Stockholm 2021',models.Stockholm_2021)
-    get_data_about_event_stickers('2020 RMR',models.Rmr_2020)
+    # get_data_about_event_stickers('Paris 2023',models.Paris_2023)
+    # get_data_about_event_stickers('Rio 2022',models.Rio_2022)
+    # get_data_about_event_stickers('Antwerp 2022',models.Antwerp_2022)
+    # get_data_about_event_stickers('Stockholm 2021',models.Stockholm_2021)
+    # get_data_about_event_stickers('2020 RMR',models.Rmr_2020)
 
 if __name__ == '__main__':
-    #main()
+    main()
     get_buff_id_of_items()
 
