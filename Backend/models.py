@@ -14,6 +14,16 @@ class Stickers(Base):
     sold_in_last_day = Column(Integer)
     capsule_name = Column(String)
 
+class Capsules(Base):
+    __abstract__ = True
+
+    id = Column(Integer, primary_key=True,autoincrement=True)   
+    date_of_scrape = Column(Date)
+    name = Column(String)
+    price = Column(Float)
+    market_listings = Column(Integer)
+    sold_in_last_day = Column(Integer)
+
 class StickersHref(Base):
     __abstract__ = True
 
@@ -36,6 +46,7 @@ Rio_2022 = create_stickers_model('Steam_market_Rio_2022',Stickers)
 Antwerp_2022 = create_stickers_model('Steam_market_Antwerp_2022',Stickers)
 Stockholm_2021 = create_stickers_model('Steam_market_Stockholm_2021',Stickers)
 Rmr_2020 = create_stickers_model('Steam_market_RMR_2020',Stickers)
+Tournament_Capsule = create_stickers_model('Steam_market_capsules',Capsules)
 
 if __name__ == '__main__':
     pass

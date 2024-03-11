@@ -19,6 +19,13 @@ class StickersBase(BaseModel):
     sold_in_last_day: int
     capsule_name: str
 
+class CapsuleBase(BaseModel):
+    date_of_scrape: str
+    name: str
+    price: float
+    market_listings: int
+    sold_in_last_day: int
+
 
 
 def get_db():
