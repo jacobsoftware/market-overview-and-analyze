@@ -272,4 +272,4 @@ if __name__ == '__main__':
     get_href_from_csgostash(CSGOSTASH_CPASULE_SITE,'Tournament Capsule','Capsule',CAPSULE_INFO)
     get_href_from_csgostash(CSGOSTASH_CAPSULE_AUTOGRAPH_SITE,'Tournament Capsule','Autograph Capsule',CAPSULE_INFO)
     get_buff_id_of_items()
-    get_data_from_csgostash('Tournament Capsule',models.Tournament_Capsule,CAPSULE_INFO)
+    get_data_from_csgostash('Tournament Capsule',models.Capsules,CAPSULE_INFO)
