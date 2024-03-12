@@ -46,7 +46,5 @@ Rio_2022 = create_table_model('Steam_market_Rio_2022',Stickers)
 Antwerp_2022 = create_table_model('Steam_market_Antwerp_2022',Stickers)
 Stockholm_2021 = create_table_model('Steam_market_Stockholm_2021',Stickers)
 Rmr_2020 = create_table_model('Steam_market_RMR_2020',Stickers)
-
-print(type(Capsules))
 if __name__ == '__main__':
     pass

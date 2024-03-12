@@ -8,6 +8,7 @@ import re
 import pprint
 from itertools import islice
 import pandas as pd
+from urllib.parse import urlencode
 
 import app
 import models
@@ -208,14 +209,14 @@ def get_application_rate():
     response = api_request(url,params=params)
     print(response.json())
 
+def check_if_buff_id_are_here():
+    pass
+
 def get_buff_id_of_items():
 
     url = 'https://raw.githubusercontent.com/ModestSerhat/buff163-ids/main/buffids.json'
     response = api_request(url)
-    response_dict = response.json()
-    
-    
-    
+    response_dict = response.json()  
     rmr_capsule = ['2020 RMR Legends', '2020 RMR Challengers','2020 RMR Contenders']
     sticker_dict = load_json(STICKERS_INFO)
     capsule_dict = load_json(CAPSULE_INFO)
@@ -229,7 +230,6 @@ def get_buff_id_of_items():
                 for index,_ in enumerate(capsule_dict['Tournament Capsule']):
 
                     if capsule_dict['Tournament Capsule'][index]['name'] == response_dict[key]:
-                        print(response_dict[key])
                         capsule_dict['Tournament Capsule'][index].update({'buff_id':key})
 
         if re.search('^Sticker.*$',response_dict[key]):
@@ -245,8 +245,21 @@ def get_buff_id_of_items():
     save_or_update_json(CAPSULE_INFO,capsule_dict)
     save_or_update_json(STICKERS_INFO,sticker_dict)
 
+# We can read all sticker types with base name
+def get_buff_data():
     
-
+    url = 'https://buff.163.com/api/market/goods'
+    name_of_item = 'Sticker | Renegades | Stockholm 2021'
+    params = {
+        'game' : 'csgo',
+        'page_num' : '1',
+        'search' : name_of_item,
+        'sort_by': 'price.desc'
+    }
+    
+    cookies = {'Cookie':LOADED_KEYS['buff_cookies']}
+    response = api_request(url,params=params,cookies=cookies)
+    pprint.pprint(response.json())
 
 
 
@@ -268,8 +281,10 @@ def main():
 
 if __name__ == '__main__':
     #main()
-    #get_buff_id_of_items()
-    get_href_from_csgostash(CSGOSTASH_CPASULE_SITE,'Tournament Capsule','Capsule',CAPSULE_INFO)
-    get_href_from_csgostash(CSGOSTASH_CAPSULE_AUTOGRAPH_SITE,'Tournament Capsule','Autograph Capsule',CAPSULE_INFO)
-    get_buff_id_of_items()
-    get_data_from_csgostash('Tournament Capsule',models.Capsules,CAPSULE_INFO)
+
+    # get_href_from_csgostash(CSGOSTASH_CPASULE_SITE,'Tournament Capsule','Capsule',CAPSULE_INFO)
+    # get_href_from_csgostash(CSGOSTASH_CAPSULE_AUTOGRAPH_SITE,'Tournament Capsule','Autograph Capsule',CAPSULE_INFO)
+    # get_buff_id_of_items()
+    # get_data_from_csgostash('Tournament Capsule',models.Capsules,CAPSULE_INFO)
+
+    get_buff_data()
