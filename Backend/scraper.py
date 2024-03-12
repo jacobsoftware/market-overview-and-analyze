@@ -8,7 +8,6 @@ import re
 import pprint
 from itertools import islice
 import pandas as pd
-from urllib.parse import urlencode
 
 import app
 import models
@@ -18,15 +17,21 @@ from utils_file import *
     
 LOADED_KEYS = load_json('keys.json')
 CSFLOAT_API_KEY = LOADED_KEYS['csfloat_api_key']
+COOKIES_CSGOSTASH_USD = LOADED_KEYS['csgostash_cookies_usd']
+
 STEAM_MAIN_SITE = 'https://steamcommunity.com/market/search?appid=730'
 CSGOSTASH_MAIN_SITE='https://csgostash.com/stickers/tournament/'
 CSGOSTASH_CPASULE_SITE = 'https://csgostash.com/containers/sticker-capsules'
 CSGOSTASH_CAPSULE_AUTOGRAPH_SITE = 'https://csgostash.com/containers/autograph-capsules'
+
 HEADERS = {'User-Agent':'Mozilla/5.0 (Windows Phone 10.0; Android 6.0.1; Microsoft; RM-1152) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Mobile Safari/537.36 Edge/15.15254'}
-COOKIES_CSGOSTASH_USD = LOADED_KEYS['csgostash_cookies_usd']
+
 STICKERS_INFO = os.path.join(os.path.dirname(__file__), 'stickers_info.json')
 CAPSULE_INFO = os.path.join(os.path.dirname(__file__), 'capsules_info.json')
+INFO = os.path.join(os.path.dirname(__file__), 'info.json')
+
 EVENTS = ['Paris 2023','Rio 2022','Antwerp 2022','Stockholm 2021','2020 RMR']
+
 
 def retry(function, retries=3):
     def wrapper(*args,**kwargs):
@@ -209,57 +214,46 @@ def get_application_rate():
     response = api_request(url,params=params)
     print(response.json())
 
-def check_if_buff_id_are_here():
-    pass
 
-def get_buff_id_of_items():
 
-    url = 'https://raw.githubusercontent.com/ModestSerhat/buff163-ids/main/buffids.json'
-    response = api_request(url)
-    response_dict = response.json()  
-    rmr_capsule = ['2020 RMR Legends', '2020 RMR Challengers','2020 RMR Contenders']
-    sticker_dict = load_json(STICKERS_INFO)
-    capsule_dict = load_json(CAPSULE_INFO)
-    
-    for key in response_dict:
-        
-        if 'Capsule' in response_dict[key] or any(x in response_dict[key] for x in rmr_capsule):
-            
-            if any(x in response_dict[key] for x in EVENTS):
-                
-                for index,_ in enumerate(capsule_dict['Tournament Capsule']):
-
-                    if capsule_dict['Tournament Capsule'][index]['name'] == response_dict[key]:
-                        capsule_dict['Tournament Capsule'][index].update({'buff_id':key})
-
-        if re.search('^Sticker.*$',response_dict[key]):
-
-            if any(x in response_dict[key] for x in EVENTS):
-                split_name = response_dict[key].split(' | ')
-
-                for index,_ in enumerate(sticker_dict[split_name[-1]]):
-
-                    if sticker_dict[split_name[-1]][index]['name'] == response_dict[key]:
-                        sticker_dict[split_name[-1]][index].update({'buff_id':key})
-
-    save_or_update_json(CAPSULE_INFO,capsule_dict)
-    save_or_update_json(STICKERS_INFO,sticker_dict)
 
 # We can read all sticker types with base name
 def get_buff_data():
     
     url = 'https://buff.163.com/api/market/goods'
-    name_of_item = 'Sticker | Renegades | Stockholm 2021'
-    params = {
-        'game' : 'csgo',
-        'page_num' : '1',
-        'search' : name_of_item,
-        'sort_by': 'price.desc'
-    }
-    
     cookies = {'Cookie':LOADED_KEYS['buff_cookies']}
-    response = api_request(url,params=params,cookies=cookies)
-    pprint.pprint(response.json())
+
+    if os.path.isfile(INFO) is False:
+        temp_dict = {}
+        for event in EVENTS:
+            params = {
+            'game' : 'csgo',
+            'page_num' : '1',
+            'search' : event,
+            'sort_by': 'price.desc'
+            }
+            response = api_request(url,params=params,cookies=cookies).json()
+            temp_dict.update({event:response['data']['total_page']})
+        dict_to_save = {'Buff page number':temp_dict}
+        save_or_update_json(INFO,dict_to_save)
+
+    if os.path.isfile(INFO):
+        pages = load_json(INFO)
+
+        for event in pages['Buff page number']:
+            for i in range(1,pages['Buff page number'][event]+1):
+                params = {
+                'game' : 'csgo',
+                'page_num' : i,
+                'search' : event,
+                'sort_by': 'price.desc'
+                }
+                response = api_request(url,params=params,cookies=cookies).json()
+                for j in range(0,19+1):
+                    price = response['data']['items'][j]['name']
+                    name = response['data']['items'][j]['sell_min_price']
+                    market_listings = response['data']['items'][j]['sell_num']
+                    print(price,name,market_listings)
 
 
 
@@ -279,12 +273,12 @@ def main():
     get_data_from_csgostash('Stockholm 2021',models.Stockholm_2021,STICKERS_INFO)
     get_data_from_csgostash('2020 RMR',models.Rmr_2020,STICKERS_INFO)
 
+    get_href_from_csgostash(CSGOSTASH_CPASULE_SITE,'Tournament Capsule','Capsule',CAPSULE_INFO)
+    get_href_from_csgostash(CSGOSTASH_CAPSULE_AUTOGRAPH_SITE,'Tournament Capsule','Autograph Capsule',CAPSULE_INFO)
+
+    get_data_from_csgostash('Tournament Capsule',models.Capsules,CAPSULE_INFO)
+
 if __name__ == '__main__':
     #main()
-
-    # get_href_from_csgostash(CSGOSTASH_CPASULE_SITE,'Tournament Capsule','Capsule',CAPSULE_INFO)
-    # get_href_from_csgostash(CSGOSTASH_CAPSULE_AUTOGRAPH_SITE,'Tournament Capsule','Autograph Capsule',CAPSULE_INFO)
-    # get_buff_id_of_items()
-    # get_data_from_csgostash('Tournament Capsule',models.Capsules,CAPSULE_INFO)
 
     get_buff_data()

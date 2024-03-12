@@ -11,7 +11,7 @@ from database import SessionLocal, engine
 import models
 
 
-class StickersBase(BaseModel):
+class SteamStickersBase(BaseModel):
     date_of_scrape: str
     name: str
     price: float
@@ -19,7 +19,7 @@ class StickersBase(BaseModel):
     sold_in_last_day: int
     capsule_name: str
 
-class CapsuleBase(BaseModel):
+class SteamCapsuleBase(BaseModel):
     date_of_scrape: str
     name: str
     price: float

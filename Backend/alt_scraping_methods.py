@@ -82,3 +82,38 @@
 
 #     print(search_phrase) 
 #     print(list_of_data)
+
+
+
+# def get_buff_id_of_items():
+
+#     url = 'https://raw.githubusercontent.com/ModestSerhat/buff163-ids/main/buffids.json'
+#     response = api_request(url)
+#     response_dict = response.json()  
+#     rmr_capsule = ['2020 RMR Legends', '2020 RMR Challengers','2020 RMR Contenders']
+#     sticker_dict = load_json(STICKERS_INFO)
+#     capsule_dict = load_json(CAPSULE_INFO)
+    
+#     for key in response_dict:
+        
+#         if 'Capsule' in response_dict[key] or any(x in response_dict[key] for x in rmr_capsule):
+            
+#             if any(x in response_dict[key] for x in EVENTS):
+                
+#                 for index,_ in enumerate(capsule_dict['Tournament Capsule']):
+
+#                     if capsule_dict['Tournament Capsule'][index]['name'] == response_dict[key]:
+#                         capsule_dict['Tournament Capsule'][index].update({'buff_id':key})
+
+#         if re.search('^Sticker.*$',response_dict[key]):
+
+#             if any(x in response_dict[key] for x in EVENTS):
+#                 split_name = response_dict[key].split(' | ')
+
+#                 for index,_ in enumerate(sticker_dict[split_name[-1]]):
+
+#                     if sticker_dict[split_name[-1]][index]['name'] == response_dict[key]:
+#                         sticker_dict[split_name[-1]][index].update({'buff_id':key})
+
+#     save_or_update_json(CAPSULE_INFO,capsule_dict)
+#     save_or_update_json(STICKERS_INFO,sticker_dict)
