@@ -249,7 +249,8 @@ def get_buff_data():
                 'sort_by': 'price.desc'
                 }
                 response = api_request(url,params=params,cookies=cookies).json()
-                for j in range(0,19+1):
+                length = len(response['data']['items'])
+                for j in range(0,length):
                     price = response['data']['items'][j]['name']
                     name = response['data']['items'][j]['sell_min_price']
                     market_listings = response['data']['items'][j]['sell_num']

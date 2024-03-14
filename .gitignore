@@ -3,3 +3,4 @@
 *.db
 test*.py
 keys.json
+__pycache__/
