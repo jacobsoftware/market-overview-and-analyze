@@ -10,4 +10,5 @@ Further plans:
 -  host on web with FastAPI, sqlAlchemy and ReactJS
  
 Buff163 scraper - **finished**
+
 Csgostash scraper - **finished**
