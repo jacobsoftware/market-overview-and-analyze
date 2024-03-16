@@ -12,3 +12,5 @@ Further plans:
 Buff163 scraper - **finished**
 
 Csgostash scraper - **finished**
+
+Player count - **finished**
