@@ -11,6 +11,7 @@ Further plans:
 -  host on web with FastAPI, sqlAlchemy and ReactJS
 -  data visualization
 -  calculating indicators based on data
+-  code refactor
 
  
 Buff163 scraper - **finished**
