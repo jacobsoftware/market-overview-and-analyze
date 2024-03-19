@@ -12,6 +12,7 @@ Further plans:
 -  data visualization
 -  calculating indicators based on data
 -  code refactor
+-  validation
 
  
 Buff163 scraper - **finished**
