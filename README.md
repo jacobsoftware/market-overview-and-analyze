@@ -12,7 +12,7 @@ Further plans:
 -  data visualization
 -  calculating indicators based on data
 -  code refactor
--  add Copenhagen event
+-  add Copenhagen event after last capsule release
 
  
 Buff163 scraper - **finished**
