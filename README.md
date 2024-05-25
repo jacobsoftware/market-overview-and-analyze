@@ -16,6 +16,7 @@ Further plans:
 
  
 ~~Buff163 scraper - **finished**~~ Buff now is only obtainable for China
+
 Csgostash scraper - **finished**
 
 Player count - **finished**
