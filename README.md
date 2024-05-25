@@ -15,8 +15,7 @@ Further plans:
 -  add Copenhagen event after last capsule release
 
  
-Buff163 scraper - **finished**
-
+~~Buff163 scraper - **finished**~~ Buff now is only obtainable for China
 Csgostash scraper - **finished**
 
 Player count - **finished**
